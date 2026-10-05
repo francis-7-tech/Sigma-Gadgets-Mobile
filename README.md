@@ -1,56 +1,99 @@
-# Welcome to your Expo app 👋
+# Sigma Gadgets Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The mobile app for the [Sigma Gadgets](https://sigma-gadgets.vercel.app) shop. It uses the website's API, the same accounts and the same cart.
 
-## Get started
+- **Website:** https://sigma-gadgets.vercel.app
+- **Website source and API docs:** https://github.com/francis-7-tech/Sigma-Gadgets
 
-1. Install dependencies
+## Features
 
+- Browse products by category and open a product page
+- Sign in with the same Google account as the website
+- Add to cart, change quantities and remove items
+- The cart is shared with the website and updates in real time in both directions
+- Checkout opens the website
+
+## Tech stack
+
+| | |
+|---|---|
+| Framework | Expo SDK 57 (React Native), TypeScript |
+| Navigation | Expo Router |
+| Data | TanStack Query |
+| Real-time | Pusher Channels |
+| Token storage | Expo SecureStore |
+| Tests | Vitest |
+| Builds | EAS Build |
+
+## Getting started
+
+1. Install Node.js 22 or newer and the **Expo Go** app on your phone.
+2. Install dependencies:
    ```bash
    npm install
    ```
-
-2. Start the app
-
+3. Start the app and scan the QR code with your phone:
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+The app talks to `https://sigma-gadgets.vercel.app` by default. To use another server, set `EXPO_PUBLIC_API_URL`.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Scripts
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+| Command | What it does |
+|---|---|
+| `npm start` | Start the Expo dev server |
+| `npm run typecheck` | Type-check the code |
+| `npm test` | Unit tests |
+| `npm run build:apk` | Build an Android APK with EAS |
 
-## Get a fresh project
+## How it works
 
-When you're ready, run:
+**One account.** Tapping "Sign in with Google" opens the website's sign-in page in the phone's browser. The website sends back a one-time code (60 seconds, single use, protected with PKCE), and the app swaps it for a login token. The token is stored in the phone's encrypted storage and sent as `Authorization: Bearer <token>`.
 
-```bash
-npm run reset-project
+**One cart.** The app and the website read and write the same cart through the same server code.
+
+**Real time.** After every cart change the server sends a `cart-changed` signal on a private Pusher channel for that user. The app and the website both listen and reload the cart. The signal carries no cart data, and the server only lets a signed-in user listen to their own channel. The app also reloads the cart when it is reopened or reconnects.
+
+## API endpoints used
+
+| Method | Endpoint | Used for |
+|---|---|---|
+| `GET` | `/api/v1/products`, `/api/v1/products/{slug}`, `/api/v1/categories` | Shop and product pages |
+| `GET` | `/mobile/authorize` | Sign-in page opened in the browser |
+| `POST` | `/api/mobile/token` | Swap the one-time code for a login token |
+| `GET` | `/api/v1/me` | Check the login token |
+| `DELETE` | `/api/v1/session` | Sign out |
+| `GET` | `/api/v1/cart` | Read the cart |
+| `POST` | `/api/v1/cart/items` | Add to cart |
+| `PATCH`, `DELETE` | `/api/v1/cart/items/{productId}` | Change quantity, remove |
+| `GET`, `POST` | `/api/v1/realtime`, `/api/v1/realtime/auth` | Real-time channel details and permission |
+
+## Project structure
+
+```
+src/
+  app/          screens (Expo Router): (tabs)/index, (tabs)/cart, (tabs)/account, product/[slug], auth
+  components/   button, product card, screen message
+  context/      auth (sign-in state), cart-sync (real-time connection)
+  hooks/        cart queries and mutations
+  lib/          API client, PKCE helpers, money, theme, session storage
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Build the APK
 
-### Other setup steps
+```bash
+npx eas-cli@latest login
+npm run build:apk
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+EAS builds in the cloud and gives a download link for the `.apk`.
 
-## Learn more
+## Manual test on a phone
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+1. On the website, sign in with a new Google account and add an item to the cart.
+2. Open the app, go to **Account** and sign in with the same Google account.
+3. Open **Cart**: the item from the website is there.
+4. Go to **Shop**, open another product and tap **Add to cart**.
+5. Back on the website, the cart shows the item added from the app.

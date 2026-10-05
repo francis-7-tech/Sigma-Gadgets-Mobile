@@ -1,18 +1,38 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { focusManager, QueryClientProvider } from "@tanstack/react-query";
+import { Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { AppState } from "react-native";
+import { AuthProvider } from "@/context/auth";
+import { CartSyncProvider } from "@/context/cart-sync";
+import { queryClient } from "@/lib/query-client";
+import { colors } from "@/lib/theme";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+export default function RootLayout() {
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => focusManager.setFocused(state === "active"));
+    return () => subscription.remove();
+  }, []);
 
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <CartSyncProvider>
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.card },
+              headerTintColor: colors.foreground,
+              headerTitleStyle: { fontWeight: "800" },
+              contentStyle: { backgroundColor: colors.background },
+            }}
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="product/[slug]" options={{ title: "", headerBackTitle: "Shop" }} />
+            <Stack.Screen name="auth" options={{ headerShown: false }} />
+          </Stack>
+        </CartSyncProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
