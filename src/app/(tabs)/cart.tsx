@@ -90,7 +90,7 @@ export default function CartScreen() {
       ListHeaderComponent={
         <View style={styles.syncRow}>
           <View style={[styles.syncDot, { backgroundColor: live ? "#1D8A4A" : colors.input }]} />
-          <Text style={styles.syncText}>{live ? "Live: synced with the website" : "Connecting to live updates…"}</Text>
+          <Text style={styles.syncText}>{live ? "Live: synced with the website" : "Synced with the website every few seconds"}</Text>
         </View>
       }
       ListEmptyComponent={

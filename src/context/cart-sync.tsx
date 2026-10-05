@@ -27,6 +27,8 @@ export function CartSyncProvider({ children }: { children: ReactNode }) {
         if (cancelled || !config) return;
         pusher = new Pusher(config.key, {
           cluster: config.cluster,
+          forceTLS: true,
+          enabledTransports: ["ws", "wss"],
           channelAuthorization: {
             endpoint: `${API_URL}/api/v1/realtime/auth`,
             transport: "ajax",
