@@ -17,6 +17,10 @@ function isClientError(error: unknown): boolean {
 
 export const CART_QUERY_KEY = ["cart"] as const;
 
+export function refreshCart(): void {
+  queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
+}
+
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({ onError: handleError }),
   mutationCache: new MutationCache({ onError: handleError }),

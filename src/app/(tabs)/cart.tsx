@@ -1,15 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
+import { useCallback } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { Button } from "@/components/button";
 import { ScreenMessage } from "@/components/screen-message";
 import { useAuth } from "@/context/auth";
-import { useCartIsLive } from "@/context/cart-sync";
+import { useCartSyncStatus } from "@/context/cart-sync";
 import { useCart, useSetQuantity } from "@/hooks/use-cart";
+import { syncStatusLabel } from "@/lib/cart-sync";
 import { API_URL } from "@/lib/config";
 import { formatNaira } from "@/lib/money";
+import { refreshCart } from "@/lib/query-client";
 import { colors, radius, spacing } from "@/lib/theme";
 import type { CartLine } from "@/lib/types";
 
@@ -17,7 +20,14 @@ export default function CartScreen() {
   const { status } = useAuth();
   const cart = useCart();
   const setQuantity = useSetQuantity();
-  const live = useCartIsLive();
+  const syncStatus = useCartSyncStatus();
+  const live = syncStatus === "live";
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshCart();
+    }, []),
+  );
 
   if (status === "loading") return <ScreenMessage loading />;
   if (status === "signedOut") {
@@ -90,7 +100,7 @@ export default function CartScreen() {
       ListHeaderComponent={
         <View style={styles.syncRow}>
           <View style={[styles.syncDot, { backgroundColor: live ? "#1D8A4A" : colors.input }]} />
-          <Text style={styles.syncText}>{live ? "Live: synced with the website" : "Synced with the website every few seconds"}</Text>
+          <Text style={styles.syncText}>{syncStatusLabel(syncStatus)}</Text>
         </View>
       }
       ListEmptyComponent={
