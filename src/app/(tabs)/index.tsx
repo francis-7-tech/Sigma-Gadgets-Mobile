@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Button } from "@/components/button";
 import { ProductCard } from "@/components/product-card";
 import { ScreenMessage } from "@/components/screen-message";
@@ -11,6 +11,9 @@ export default function ShopScreen() {
   const [category, setCategory] = useState<string | null>(null);
   const categories = useQuery({ queryKey: ["categories"], queryFn: api.categories });
   const products = useQuery({ queryKey: ["products", category], queryFn: () => api.products(category) });
+
+  const { width } = useWindowDimensions();
+  const cardWidth = Math.floor((width - spacing.lg * 2 - spacing.md) / 2);
 
   const chips = [{ name: "All", slug: null as string | null }, ...(categories.data ?? [])];
 
@@ -48,7 +51,7 @@ export default function ShopScreen() {
           numColumns={2}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.list}
-          renderItem={({ item }) => <ProductCard product={item} />}
+          renderItem={({ item }) => <ProductCard product={item} width={cardWidth} />}
           refreshControl={<RefreshControl refreshing={products.isRefetching} onRefresh={() => products.refetch()} />}
           ListEmptyComponent={<ScreenMessage title="No products here yet" />}
         />
